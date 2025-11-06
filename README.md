@@ -9,7 +9,7 @@ public:
     string name;
     double price;
 
-    Product() : id(0), name(""), price(0.0) {} // Default constructor with initialization
+    Product() : id(0), name(""), price(0.0) {}
     Product(int pid, string pname, double pprice) {
         id = pid;
         name = pname;
@@ -26,7 +26,7 @@ public:
     Product product;
     int quantity;
 
-    CartItem() : quantity(0) {} // Default constructor with initialization
+    CartItem() : quantity(0) {}
     CartItem(Product p, int q) {
         product = p;
         quantity = q;
@@ -123,7 +123,7 @@ int checkout(const CartItem cart[], int cartCount) {
         cout << "Thank you for shopping with us!\n";
     }
 
-    return 0; // Reset cart count after checkout
+    return 0;
 }
 
 int main() {
@@ -157,7 +157,7 @@ int main() {
                 viewCart(cart, cartCount);
                 break;
             case 4:
-                cartCount = checkout(cart, cartCount); // Reset cart after checkout
+                cartCount = checkout(cart, cartCount); 
                 break;
             case 5:
                 cout << "\nThank you! Visit again.\n";
