@@ -1,132 +1,101 @@
 #include <iostream>
 #include <string>
+#include <fstream>
 
 using namespace std;
 
-class Product {
+// --- 1. FUNCTION OVERLOADING ---
+void displayHeader(string title) {
+    cout << "\n======================================\n";
+    cout << "      " << title << "\n";
+    cout << "======================================\n";
+}
+
+void displayHeader(string title, string subtitle) {
+    displayHeader(title); // This one calls the other one!
+    cout << "--- " << subtitle << " ---\n";
+}
+
+// --- 2. INHERITANCE (Base Class) ---
+class Item {
 public:
     int id;
     string name;
-    double price;
+};
 
-    Product() : id(0), name(""), price(0.0) {}
+// --- 3. FRIEND FUNCTION & 4. OPERATOR OVERLOADING ---
+class Product : public Item {
+private:
+    double price; 
+
+public:
+    Product() {}
     Product(int pid, string pname, double pprice) {
         id = pid;
         name = pname;
-        price = pprice;
+        this->price = pprice;
     }
 
-    void displayProduct() const {
+    double getPrice() {
+        return price;
+    }
+
+    void show() {
         cout << id << ". " << name << " - Rs." << price << endl;
     }
+
+    // --- 4. OPERATOR OVERLOADING ---
+    bool operator==(const Product& other) {
+        return this->id == other.id;
+    }
+    
+    // --- 3. FRIEND FUNCTION (Declaration) ---
+    friend void showTax(Product p);
 };
 
+// --- 3. FRIEND FUNCTION (Definition) ---
+void showTax(Product p) {
+    double tax = p.price * 0.18; // Accessing private 'price'
+    cout << "Tax (18%) for " << p.name << " is: Rs." << tax << endl;
+}
+
+// --- CartItem Class (Modified) ---
 class CartItem {
 public:
     Product product;
     int quantity;
 
-    CartItem() : quantity(0) {}
+    CartItem() {}
     CartItem(Product p, int q) {
         product = p;
         quantity = q;
     }
 
-    double getTotalPrice() const {
-        return product.price * quantity;
+    double totalPrice() {
+        return product.getPrice() * quantity;
     }
 
-    void displayCartItem() const {
-        cout << product.name << " x " << quantity << " = Rs." << getTotalPrice() << endl;
+    void showItem() {
+        cout << product.name << " x " << quantity << " = Rs." << totalPrice() << endl;
+    }
+
+    void saveToFile(ofstream &file) {
+        file << product.name << " x " << quantity << " = Rs." << totalPrice() << endl;
     }
 };
 
-void displayWelcome() {
-    cout << "==============================" << endl;
-    cout << "     WELCOME TO SHOP EASY     " << endl;
-    cout << "==============================" << endl;
-}
-
-void displayMenu() {
-    cout << "\n1. View Products";
-    cout << "\n2. Add to Cart";
-    cout << "\n3. View Cart";
-    cout << "\n4. Checkout";
-    cout << "\n5. Exit";
-    cout << "\nEnter your choice: ";
-}
-
-void viewProducts(const Product products[], int productCount) {
-    cout << "\nAvailable Products:\n";
-    for (int i = 0; i < productCount; i++) {
-        products[i].displayProduct();
+// --- 5. TEMPLATE ---
+template <typename T>
+void showArray(T arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        arr[i].show();
     }
-}
-
-int addToCart(CartItem cart[], int cartCount, const Product products[], int productCount) {
-    if (cartCount >= 10) {
-        cout << "Your cart is full! Cannot add more items.\n";
-        return cartCount;
-    }
-
-    int pid, qty;
-    cout << "\nEnter Product ID to add: ";
-    cin >> pid;
-    cout << "Enter Quantity: ";
-    cin >> qty;
-
-    int foundIndex = -1;
-    for (int i = 0; i < productCount; i++) {
-        if (products[i].id == pid) {
-            foundIndex = i;
-            break;
-        }
-    }
-
-    if (foundIndex != -1) {
-        cart[cartCount] = CartItem(products[foundIndex], qty);
-        cout << products[foundIndex].name << " added to cart.\n";
-        return cartCount + 1;
-    } else {
-        cout << "Invalid Product ID!\n";
-        return cartCount;
-    }
-}
-
-void viewCart(const CartItem cart[], int cartCount) {
-    if (cartCount == 0) {
-        cout << "\nYour cart is empty!\n";
-    } else {
-        cout << "\nYour Cart:\n";
-        double total = 0;
-        for (int i = 0; i < cartCount; i++) {
-            cart[i].displayCartItem();
-            total += cart[i].getTotalPrice();
-        }
-        cout << "----------------------------\n";
-        cout << "Total Amount: Rs." << total << endl;
-    }
-}
-
-int checkout(const CartItem cart[], int cartCount) {
-    if (cartCount == 0) {
-        cout << "\nYour cart is empty! Add items first.\n";
-    } else {
-        double total = 0;
-        cout << "\nCheckout Summary:\n";
-        for (int i = 0; i < cartCount; i++) {
-            cart[i].displayCartItem();
-            total += cart[i].getTotalPrice();
-        }
-        cout << "----------------------------\n";
-        cout << "Total Bill: Rs." << total << endl;
-        cout << "Thank you for shopping with us!\n";
-    }
-
-    return 0;
 }
 
 int main() {
+    // This counter will be used for Bill IDs
+    static int billCounter = 101; 
+
     Product products[5] = {
         Product(1, "Laptop", 55000),
         Product(2, "Smartphone", 20000),
@@ -134,36 +103,123 @@ int main() {
         Product(4, "Keyboard", 700),
         Product(5, "Mouse", 500)
     };
-    int productCount = 5;
 
     CartItem cart[10];
     int cartCount = 0;
-    int choice;
+    int choice, qty;
 
-    displayWelcome();
+    displayHeader("SHOP EASY STORE");
 
     while (true) {
-        displayMenu();
+        cout << "\n1. View Products";
+        cout << "\n2. Add to Cart";
+        cout << "\n3. View Cart";
+        cout << "\n4. Checkout";
+        cout << "\n5. View Saved Bills";
+        cout << "\n6. Demo Friend Function";
+        cout << "\n7. Exit";
+        cout << "\nEnter your choice: ";
         cin >> choice;
 
-        switch (choice) {
-            case 1:
-                viewProducts(products, productCount);
-                break;
-            case 2:
-                cartCount = addToCart(cart, cartCount, products, productCount);
-                break;
-            case 3:
-                viewCart(cart, cartCount);
-                break;
-            case 4:
-                cartCount = checkout(cart, cartCount); 
-                break;
-            case 5:
-                cout << "\nThank you! Visit again.\n";
-                return 0;
-            default:
-                cout << "Invalid choice! Try again.\n";
+        if (choice == 1) {
+            displayHeader("Available Products", "All Items");
+            showArray(products, 5);
+        }  
+        else if (choice == 2) {
+            int pid;
+            cout << "\nEnter Product ID: ";
+            cin >> pid;
+            cout << "Enter Quantity: ";
+            cin >> qty;
+
+            if (pid >= 1 && pid <= 5) {
+                cart[cartCount++] = CartItem(products[pid - 1], qty);
+                cout << products[pid - 1].name << " added to cart.\n";
+            } else {
+                cout << "Invalid Product ID!\n";
+            }
+        }  
+        else if (choice == 3) {
+            if (cartCount == 0) {
+                cout << "\nYour cart is empty!\n";
+            } else {
+                displayHeader("Your Cart");
+                double total = 0;
+                for (int i = 0; i < cartCount; i++) {
+                    cart[i].showItem();
+                    total += cart[i].totalPrice();
+                }
+                cout << "----------------------------\n";
+                cout << "Total: Rs." << total << endl;
+            }
+        }  
+        else if (choice == 4) {
+            if (cartCount == 0) {
+                cout << "\nYour cart is empty!\n";
+            } else {
+                // --- 6. DYNAMIC MEMORY ALLOCATION ---
+                string* billId = new string; // 1. Allocate memory
+                
+                // 2. Use the memory (using the billCounter)
+                *billId = "BILL-" + to_string(billCounter++); 
+                
+                cout << "\nCheckout Summary (Bill ID: " << *billId << ")\n";
+                
+                ofstream file("bill.txt", ios::app);
+                file << "\n==============================" << endl;
+                file << "         SHOP EASY BILL         \n";
+                file << "Bill ID: " << *billId << endl;
+                file << "==============================" << endl;
+
+                double total = 0;
+                for (int i = 0; i < cartCount; i++) {
+                    cart[i].showItem();
+                    cart[i].saveToFile(file);
+                    total += cart[i].totalPrice();
+                }
+
+                file << "----------------------------" << endl;
+                file << "Total: Rs." << total << endl;
+                file << "==============================\n" << endl;
+                file.close();
+                
+                cout << "----------------------------\n";
+                cout << "Total Bill: Rs." << total << endl;
+                
+                // 3. Free the memory
+                delete billId;
+
+                cout << "Bill saved to file.\n";
+                cout << "Thank you for shopping!\n";
+                cartCount = 0;
+            }
+        }  
+        else if (choice == 5) {
+            displayHeader("Saved Bills");
+            ifstream file("bill.txt");
+            if (!file) {
+                cout << "\nNo bills found.\n";
+            } else {
+                string line;
+                while (getline(file, line)) {
+                    cout << line << endl;
+                }
+                file.close();
+            }
+        }  
+        else if (choice == 6) {
+            displayHeader("Friend Function Demo");
+            cout << "Running friend function 'showTax' on 'Laptop':\n";
+            showTax(products[0]);
+        }
+        else if (choice == 7) {
+            cout << "\nThank you! Visit again.\n";
+            break;
+        }  
+        else {
+            cout << "Invalid choice! Try again.\n";
         }
     }
+
+    return 0;
 }
